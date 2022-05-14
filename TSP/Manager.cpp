@@ -1,4 +1,5 @@
 #include "Manager.h"
+#include <time.h>
 
 void Manager::TSPSolver() {
 	int size;
@@ -140,6 +141,30 @@ void Manager::SavePointsToFile(std::string filePath, std::vector<int> chromosome
 		pointsFile << points[i].GetX() << " " << points[i].GetY() << " " << i << '\n';
 	}
 	pointsFile.close();
+}
+
+void Manager::RunTests() {
+	std::vector<std::string> files = { "30.txt", "60.txt", "90.txt", "120.txt", "150.txt",
+		"180.txt", "210.txt", "240.txt", "270.txt", "300.txt",
+		"330.txt", "360.txt", "390.txt", "420.txt", "450.txt" };
+	std::string path = "Test\\";
+	clock_t start, stop;
+	std::ofstream result("Results\\sequence1.txt");
+
+	for (int i = 0; i < files.size(); i++) {
+		result << files[i] << "\n";
+		int size;
+		std::vector<Point> points = LoadPointsFromFile(path + files[i]);
+		float** matrix = PointsToMatrix(points, size);
+		start = clock();
+		GeneticAlgorithm genetic(10000, size, 4, 10, 89, 13, matrix);
+		float score = genetic.Run(1500);
+		stop = clock();
+		double elapsed = ((double)(stop - start)) / CLOCKS_PER_SEC;
+		result << "Score " << score << " " << "Time " << elapsed << "\n";
+		std::cout << "File: " << files[i] << "\n";
+		std::cout << "Score " << score << " " << "Time " << elapsed << "\n";
+	}
 }
 
 void Manager::TestParameters() {

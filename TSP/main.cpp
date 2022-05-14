@@ -2,7 +2,8 @@
 
 int main() {
 	Manager manager;
-	manager.TSPSolver();
+	//manager.TSPSolver();
+	manager.RunTests();
 
 	return 0;
 }

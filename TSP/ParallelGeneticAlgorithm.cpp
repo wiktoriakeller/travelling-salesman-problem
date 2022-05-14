@@ -1,6 +1,7 @@
-#include "GeneticAlgorithm.h"
+#include "ParallelGeneticAlgorithm.h"
+#include <omp.h>
 
-GeneticAlgorithm::GeneticAlgorithm(int populationSize, int numberOfCities, float mutationRate, int numberOfParentPairs,
+ParallelGeneticAlgorithm::ParallelGeneticAlgorithm(int populationSize, int numberOfCities, float mutationRate, int numberOfParentPairs,
 	int chanceToUseCloseCity, int twoOptIterations, float** cities) : population(populationSize, numberOfCities) {
 	srand(time(NULL));
 
@@ -18,39 +19,39 @@ GeneticAlgorithm::GeneticAlgorithm(int populationSize, int numberOfCities, float
 	InitializePopulation();
 }
 
-void GeneticAlgorithm::SetPopulationSize(int newSize) {
+void ParallelGeneticAlgorithm::SetPopulationSize(int newSize) {
 	populationSize = newSize;
 }
 
-int GeneticAlgorithm::GetPopulationSize() const {
+int ParallelGeneticAlgorithm::GetPopulationSize() const {
 	return populationSize;
 }
 
-void GeneticAlgorithm::SetMutationRate(float newRate) {
+void ParallelGeneticAlgorithm::SetMutationRate(float newRate) {
 	mutationRate = newRate;
 }
 
-float GeneticAlgorithm::GetMutationRate() const {
+float ParallelGeneticAlgorithm::GetMutationRate() const {
 	return mutationRate;
 }
 
-void GeneticAlgorithm::SetNumberOfCities(int newNumberOfCities) {
+void ParallelGeneticAlgorithm::SetNumberOfCities(int newNumberOfCities) {
 	numberOfCities = newNumberOfCities;
 }
 
-int GeneticAlgorithm::GetNumberOfCities() const {
+int ParallelGeneticAlgorithm::GetNumberOfCities() const {
 	return numberOfCities;
 }
 
-int** GeneticAlgorithm::SetCitiesMatrix(int** matrix) {
+int** ParallelGeneticAlgorithm::SetCitiesMatrix(int** matrix) {
 	return matrix;
 }
 
-std::vector<int> GeneticAlgorithm::GetBestChromosome() {
+std::vector<int> ParallelGeneticAlgorithm::GetBestChromosome() {
 	return bestChromosome;
 }
 
-void GeneticAlgorithm::ClearPopulation() {
+void ParallelGeneticAlgorithm::ClearPopulation() {
 	if (!population.empty()) {
 		bestChromosome.clear();
 		bestFitness = std::numeric_limits<float>::min();
@@ -63,29 +64,20 @@ void GeneticAlgorithm::ClearPopulation() {
 static std::mutex i_mutex;
 static std::mutex best_mutex;
 
-void GeneticAlgorithm::GenerateTour(int* i) {
-	int iLocal;
+void ParallelGeneticAlgorithm::InitializePopulation() {
 	int startCity;
 	int nextCity;
 	std::vector<bool> visitedCities(numberOfCities, false);
-	while (true) {
-		{
-			std::lock_guard<std::mutex> lock(i_mutex);
-			iLocal = *i;
-			(*i)++;
-		}
-		if (iLocal >= populationSize) {
-			break;
-		}
 
+	for(int i = 0; i < populationSize; ++i) {
 		startCity = rand() % numberOfCities;
 		nextCity = startCity;
 		visitedCities[startCity] = true;
 
 		for (int j = 0; j < numberOfCities - 1; ++j) {
-			population[iLocal].tour[j] = nextCity;
+			population[i].tour[j] = nextCity;
 			if ((rand() % 100) < chanceToUseCloseCity) {
-				nextCity = FindNearestNeighbour(population[iLocal].tour[j], visitedCities);
+				nextCity = FindNearestNeighbour(population[i].tour[j], visitedCities);
 			}
 			else {
 				std::vector<int> onlyUnvisitedCities;
@@ -102,14 +94,14 @@ void GeneticAlgorithm::GenerateTour(int* i) {
 			}
 		}
 
-		population[iLocal].tour[numberOfCities - 1] = nextCity;
-		CalculateFitness(iLocal);
+		population[i].tour[numberOfCities - 1] = nextCity;
+		CalculateFitness(i);
 
-		if (population[iLocal].fitness > bestFitness) {
+		if (population[i].fitness > bestFitness) {
 			std::lock_guard<std::mutex> lock(best_mutex);
-			bestFitness = population[iLocal].fitness;
-			bestPath = population[iLocal].path;
-			bestChromosome = population[iLocal].tour;
+			bestFitness = population[i].fitness;
+			bestPath = population[i].path;
+			bestChromosome = population[i].tour;
 		}
 
 		for (int j = 0; j < visitedCities.size(); ++j) {
@@ -118,19 +110,7 @@ void GeneticAlgorithm::GenerateTour(int* i) {
 	}
 }
 
-void GeneticAlgorithm::InitializePopulation() {
-	int i = 0;
-	std::thread th1(&GeneticAlgorithm::GenerateTour, this, &i);
-	std::thread th2(&GeneticAlgorithm::GenerateTour, this, &i);
-	std::thread th3(&GeneticAlgorithm::GenerateTour, this, &i);
-	std::thread th4(&GeneticAlgorithm::GenerateTour, this, &i);
-	th1.join();
-	th2.join();
-	th3.join();
-	th4.join();
-}
-
-int GeneticAlgorithm::FindNearestNeighbour(int city, std::vector<bool>& visitedCities) {
+int ParallelGeneticAlgorithm::FindNearestNeighbour(int city, std::vector<bool>& visitedCities) {
 	float minPath = std::numeric_limits<float>::max();
 	int nearestNeighbour;
 
@@ -145,7 +125,7 @@ int GeneticAlgorithm::FindNearestNeighbour(int city, std::vector<bool>& visitedC
 	return nearestNeighbour;
 }
 
-float GeneticAlgorithm::CalculateDistance(std::vector<int>& chromosome) {
+float ParallelGeneticAlgorithm::CalculateDistance(std::vector<int>& chromosome) {
 	float path = 0;
 	for (int i = 0; i < numberOfCities - 1; ++i) {
 		path += cities[chromosome[i]][chromosome[i + 1]];
@@ -155,14 +135,14 @@ float GeneticAlgorithm::CalculateDistance(std::vector<int>& chromosome) {
 	return path;
 }
 
-void GeneticAlgorithm::CalculateFitness(int index) {
+void ParallelGeneticAlgorithm::CalculateFitness(int index) {
 	float path;
 	path = CalculateDistance(population[index].tour);
 	population[index].path = path;
 	population[index].fitness = 1 / path;
 }
 
-void GeneticAlgorithm::MakeNextGeneration() {
+void ParallelGeneticAlgorithm::MakeNextGeneration() {
 	int bestParentIndex = 0;
 	int bestSecondParentIndex = 0;
 	int worstParentIndex = 0;
@@ -277,11 +257,11 @@ void GeneticAlgorithm::MakeNextGeneration() {
 	}
 }
 
-bool GeneticAlgorithm::CompareFitness(Chromosome& a, Chromosome& b) {
+bool ParallelGeneticAlgorithm::CompareFitness(Chromosome& a, Chromosome& b) {
 	return a.fitness > b.fitness;
 }
 
-void GeneticAlgorithm::TwoOpt(std::vector<int>& chromosome) {
+void ParallelGeneticAlgorithm::TwoOpt(std::vector<int>& chromosome) {
 	for (int n = 0; n < twoOptIterations; ++n) {
 		float minchange = 0;
 		for (int i = 0; i < chromosome.size() - 2; ++i) {
@@ -307,11 +287,11 @@ void GeneticAlgorithm::TwoOpt(std::vector<int>& chromosome) {
 	}
 }
 
-float GeneticAlgorithm::GetDistance(int a, int b) {
+float ParallelGeneticAlgorithm::GetDistance(int a, int b) {
 	return cities[a][b];
 }
 
-void GeneticAlgorithm::Mutate(std::vector<int>& chromosome) {
+void ParallelGeneticAlgorithm::Mutate(std::vector<int>& chromosome) {
 	int randomCityIndex = rand() % chromosome.size();
 	int randomShift = rand() % (chromosome.size() - 1) + 1;
 	int direction = rand() % 2;
@@ -344,7 +324,7 @@ void GeneticAlgorithm::Mutate(std::vector<int>& chromosome) {
 	}
 }
 
-std::vector<int> GeneticAlgorithm::Crossover(std::vector<int>& parent1, std::vector<int>& parent2) {
+std::vector<int> ParallelGeneticAlgorithm::Crossover(std::vector<int>& parent1, std::vector<int>& parent2) {
 	//PMX crossover
 	std::vector<int> offspring(parent1.size(), -1);
 	int crossoverPoint2 = rand() % parent1.size();
@@ -379,7 +359,7 @@ std::vector<int> GeneticAlgorithm::Crossover(std::vector<int>& parent1, std::vec
 	return offspring;
 }
 
-int GeneticAlgorithm::FindCityIndex(std::vector<int>& chromosome, int city, int start, int end) {
+int ParallelGeneticAlgorithm::FindCityIndex(std::vector<int>& chromosome, int city, int start, int end) {
 	for (int i = start; i <= end; ++i) {
 		if (chromosome[i] == city) {
 			return i;
@@ -388,9 +368,9 @@ int GeneticAlgorithm::FindCityIndex(std::vector<int>& chromosome, int city, int 
 	return -1;
 }
 
-float GeneticAlgorithm::Run(int numberOfIterations) {
+float ParallelGeneticAlgorithm::Run(int numberOfIterations) {
 	std::vector<float> bestPaths(numberOfIterations, -1);
-	int cutoff = 300;
+	int cutoff = 500;
 
 	for (int i = 0; i < numberOfIterations; ++i) {
 		PrintBestChromosome();
@@ -404,7 +384,7 @@ float GeneticAlgorithm::Run(int numberOfIterations) {
 	return bestPath;
 }
 
-float GeneticAlgorithm::RunFixedTime(double seconds) {
+float ParallelGeneticAlgorithm::RunFixedTime(double seconds) {
 	time_t start, end;
 	double elapsed;
 	start = time(NULL);
@@ -423,14 +403,14 @@ float GeneticAlgorithm::RunFixedTime(double seconds) {
 	return bestPath;
 }
 
-void GeneticAlgorithm::PrintChromosome(std::vector<int>& chromosome) {
+void ParallelGeneticAlgorithm::PrintChromosome(std::vector<int>& chromosome) {
 	for (int j = 0; j < chromosome.size(); ++j) {
 		std::cout << chromosome[j] + 1 << ", ";
 	}
 	std::cout << chromosome[0] + 1 << "\n";
 }
 
-void GeneticAlgorithm::PrintBestChromosome() {
+void ParallelGeneticAlgorithm::PrintBestChromosome() {
 	if (bestWrittenFitness != bestFitness) {
 		std::cout << "Best fitness: " << bestFitness << "\nBest Path: " << bestPath << "\nBest Chromosome: ";
 		PrintChromosome(bestChromosome);
@@ -439,7 +419,7 @@ void GeneticAlgorithm::PrintBestChromosome() {
 	}
 }
 
-void GeneticAlgorithm::PrintPopulation() {
+void ParallelGeneticAlgorithm::PrintPopulation() {
 	for (int i = 0; i < populationSize; i++) {
 		PrintChromosome(population[i].tour);
 		std::cout << "\n";

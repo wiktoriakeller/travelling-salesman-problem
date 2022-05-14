@@ -9,7 +9,7 @@ class Manager {
 public:
 	void TSPSolver();
 	void TestParameters();
-
+	void RunTests();
 
 private:
 	float** PointsToMatrix(std::vector<Point>& points, int& size);

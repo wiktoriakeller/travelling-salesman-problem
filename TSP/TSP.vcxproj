@@ -148,12 +148,14 @@
     <ClCompile Include="InstanceGenerator.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Manager.cpp" />
+    <ClCompile Include="ParallelGeneticAlgorithm.cpp" />
     <ClCompile Include="Point.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GeneticAlgorithm.h" />
     <ClInclude Include="Greedy.h" />
     <ClInclude Include="InstanceGenerator.h" />
+    <ClInclude Include="ParallelGeneticAlgorithm.h" />
     <ClInclude Include="Point.h" />
     <ClInclude Include="Manager.h" />
   </ItemGroup>

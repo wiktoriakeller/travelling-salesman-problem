@@ -19,9 +19,9 @@ struct Chromosome {
 	Chromosome(int capacity) : tour(capacity) {}
 };
 
-class GeneticAlgorithm {
+class ParallelGeneticAlgorithm {
 public:
-	GeneticAlgorithm(int populationSize, int numberOfCities, float mutationRate, int numberOfParentPairs,
+	ParallelGeneticAlgorithm(int populationSize, int numberOfCities, float mutationRate, int numberOfParentPairs,
 		int chanceToUseCloseCity, int twoOptIterations, float** cities);
 	void SetPopulationSize(int newSize);
 	int GetPopulationSize() const;
@@ -63,5 +63,4 @@ private:
 	float GetDistance(int a, int b);
 	void PrintBestChromosome();
 	void PrintChromosome(std::vector<int>& chromosome);
-	void GenerateTour(int* i);
 };
