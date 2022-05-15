@@ -101,9 +101,9 @@ void GeneticAlgorithm::GenerateTour(int* i) {
 				visitedCities[nextCity] = true;
 			}
 		}
-
 		population[iLocal].tour[numberOfCities - 1] = nextCity;
 		CalculateFitness(iLocal);
+
 
 		if (population[iLocal].fitness > bestFitness) {
 			std::lock_guard<std::mutex> lock(best_mutex);
@@ -111,6 +111,7 @@ void GeneticAlgorithm::GenerateTour(int* i) {
 			bestPath = population[iLocal].path;
 			bestChromosome = population[iLocal].tour;
 		}
+
 
 		for (int j = 0; j < visitedCities.size(); ++j) {
 			visitedCities[j] = false;
@@ -388,20 +389,11 @@ int GeneticAlgorithm::FindCityIndex(std::vector<int>& chromosome, int city, int 
 	return -1;
 }
 
-float GeneticAlgorithm::Run(int numberOfIterations) {
-	std::vector<float> bestPaths(numberOfIterations, -1);
-	int cutoff = 300;
-
+void GeneticAlgorithm::Run(int numberOfIterations) {
 	for (int i = 0; i < numberOfIterations; ++i) {
 		PrintBestChromosome();
 		MakeNextGeneration();
-		bestPaths[i] = bestPath;
-
-		if (i >= cutoff && abs(bestPaths[i] - bestPaths[i - cutoff]) >= 1)
-			break;
 	}
-
-	return bestPath;
 }
 
 float GeneticAlgorithm::RunFixedTime(double seconds) {

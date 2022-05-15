@@ -1,5 +1,4 @@
 #include "ParallelGeneticAlgorithm.h"
-#include <omp.h>
 
 ParallelGeneticAlgorithm::ParallelGeneticAlgorithm(int populationSize, int numberOfCities, float mutationRate, int numberOfParentPairs,
 	int chanceToUseCloseCity, int twoOptIterations, float** cities) : population(populationSize, numberOfCities) {
@@ -51,6 +50,105 @@ std::vector<int> ParallelGeneticAlgorithm::GetBestChromosome() {
 	return bestChromosome;
 }
 
+float ParallelGeneticAlgorithm::GetDistance(int a, int b) {
+	return cities[a][b];
+}
+
+float ParallelGeneticAlgorithm::Run(int numberOfIterations) {
+	omp_set_nested(1);
+	omp_set_num_threads(8);
+
+	for (int i = 0; i < numberOfIterations; ++i) {
+		int bestTour = 0;
+		std::vector<int> mutatedChromosomes(numberOfParentPairs * 2, -1);
+		std::sort(population.begin(), population.end(), CompareFitness);
+
+		#pragma omp parallel 
+		{
+			int bestParentIndex;
+			int bestSecondParentIndex;
+			int worstParentIndex;
+			int worstSecondParentIndex;
+
+			#pragma omp for
+			for (int j = 0; j < numberOfParentPairs * 2; j += 2) {
+				bestParentIndex = j;
+				bestSecondParentIndex = j + 1;
+				worstParentIndex = populationSize - j - 1;
+				worstSecondParentIndex = populationSize - j - 2;
+
+				population[worstParentIndex].tour = Crossover(population[bestParentIndex].tour, population[bestSecondParentIndex].tour);
+				Mutate(population[worstParentIndex].tour);
+				TwoOpt(population[worstParentIndex].tour);
+				
+				float path1 = 0.0f;
+				int chrom1 = worstParentIndex;
+				#pragma omp parallel 
+				{
+					float localPath = 0.0f;
+					#pragma omp for
+					for (int g = 0; g < numberOfCities - 1; g++) {
+						localPath += cities[(population[chrom1].tour)[g]][(population[chrom1].tour)[g + 1]];
+					}
+
+					#pragma omp atomic
+					path1 += localPath;
+				}
+
+				population[chrom1].path = path1;
+				population[chrom1].fitness = 1 / path1;
+
+				population[worstSecondParentIndex].tour = Crossover(population[bestSecondParentIndex].tour, population[bestParentIndex].tour);
+				Mutate(population[worstSecondParentIndex].tour);
+				TwoOpt(population[worstSecondParentIndex].tour);
+				
+				float path2 = 0.0f;
+				int chrom2 = worstSecondParentIndex;
+				#pragma omp parallel 
+				{
+					float localPath = 0.0f;
+					#pragma omp for
+					for (int g = 0; g < numberOfCities - 1; g++) {
+						localPath += cities[(population[chrom2].tour)[g]][(population[chrom2].tour)[g + 1]];
+					}
+
+					#pragma omp atomic
+					path2 += localPath;
+				}
+
+				population[chrom2].path = path2;
+				population[chrom2].fitness = 1 / path2;
+
+				mutatedChromosomes[j] = worstParentIndex;
+				mutatedChromosomes[j + 1] = worstSecondParentIndex;
+			}
+
+			#pragma omp single
+			{
+				for (int j = 0; j < mutatedChromosomes.size(); ++j) {
+					if (population[j].fitness > bestFitness) {
+						bestFitness = population[j].fitness;
+						bestPath = population[j].path;
+						bestChromosome = population[j].tour;
+						bestTour = j;
+					}
+				}
+			}
+		}
+
+		TwoOpt(population[bestTour].tour);
+		if (population[bestTour].fitness > bestFitness) {
+			bestFitness = population[bestTour].fitness;
+			bestPath = population[bestTour].path;
+			bestChromosome = population[bestTour].tour;
+		}
+
+		PrintBestChromosome();
+	}
+
+	return bestPath;
+}
+
 void ParallelGeneticAlgorithm::ClearPopulation() {
 	if (!population.empty()) {
 		bestChromosome.clear();
@@ -60,9 +158,6 @@ void ParallelGeneticAlgorithm::ClearPopulation() {
 		population.clear();
 	}
 }
-
-static std::mutex i_mutex;
-static std::mutex best_mutex;
 
 void ParallelGeneticAlgorithm::InitializePopulation() {
 	int startCity;
@@ -98,7 +193,6 @@ void ParallelGeneticAlgorithm::InitializePopulation() {
 		CalculateFitness(i);
 
 		if (population[i].fitness > bestFitness) {
-			std::lock_guard<std::mutex> lock(best_mutex);
 			bestFitness = population[i].fitness;
 			bestPath = population[i].path;
 			bestChromosome = population[i].tour;
@@ -108,6 +202,10 @@ void ParallelGeneticAlgorithm::InitializePopulation() {
 			visitedCities[j] = false;
 		}
 	}
+}
+
+bool ParallelGeneticAlgorithm::CompareFitness(Chromosome& a, Chromosome& b) {
+	return a.fitness > b.fitness;
 }
 
 int ParallelGeneticAlgorithm::FindNearestNeighbour(int city, std::vector<bool>& visitedCities) {
@@ -142,125 +240,6 @@ void ParallelGeneticAlgorithm::CalculateFitness(int index) {
 	population[index].fitness = 1 / path;
 }
 
-void ParallelGeneticAlgorithm::MakeNextGeneration() {
-	int bestParentIndex = 0;
-	int bestSecondParentIndex = 0;
-	int worstParentIndex = 0;
-	int worstSecondParentIndex = 0;
-
-	int bestTour;
-
-	if (numberOfParentPairs == 1) {
-		//choosing best, second best, worst and second worst parent
-		bestTour = 0;
-		for (int i = 1; i < populationSize; i++) {
-			if (population[i].fitness > population[bestSecondParentIndex].fitness) {
-				if (population[i].fitness > population[bestParentIndex].fitness) {
-					bestParentIndex = i;
-				}
-				else {
-					bestSecondParentIndex = i;
-				}
-			}
-
-			if (population[i].fitness < population[worstSecondParentIndex].fitness) {
-				if (population[i].fitness < population[worstParentIndex].fitness) {
-					worstParentIndex = i;
-				}
-				else {
-					worstSecondParentIndex = i;
-				}
-			}
-		}
-
-		bestTour = bestParentIndex;
-
-		population[worstParentIndex].tour = Crossover(population[bestParentIndex].tour, population[bestSecondParentIndex].tour);
-		Mutate(population[worstParentIndex].tour);
-		TwoOpt(population[worstParentIndex].tour);
-		CalculateFitness(worstParentIndex);
-
-		if (population[worstParentIndex].fitness > bestFitness) {
-			bestFitness = population[worstParentIndex].fitness;
-			bestPath = population[worstParentIndex].path;
-			bestChromosome = population[worstParentIndex].tour;
-		}
-
-		if (population[worstParentIndex].fitness > population[bestTour].fitness) {
-			bestTour = worstParentIndex;
-		}
-
-		population[worstSecondParentIndex].tour = Crossover(population[bestSecondParentIndex].tour, population[bestParentIndex].tour);
-		Mutate(population[worstSecondParentIndex].tour);
-		TwoOpt(population[worstSecondParentIndex].tour);
-		CalculateFitness(worstSecondParentIndex);
-
-		if (population[worstSecondParentIndex].fitness > bestFitness) {
-			bestFitness = population[worstSecondParentIndex].fitness;
-			bestPath = population[worstSecondParentIndex].path;
-			bestChromosome = population[worstSecondParentIndex].tour;
-		}
-
-		if (population[worstSecondParentIndex].fitness > population[bestTour].fitness) {
-			bestTour = worstSecondParentIndex;
-		}
-	}
-	else {
-		std::sort(population.begin(), population.end(), CompareFitness);
-		bestTour = 0;
-
-		for (int i = 0; i < numberOfParentPairs * 2; i += 2) {
-
-			bestParentIndex = i;
-			bestSecondParentIndex = i + 1;
-			worstParentIndex = populationSize - i - 1;
-			worstSecondParentIndex = populationSize - i - 2;
-
-			population[worstParentIndex].tour = Crossover(population[bestParentIndex].tour, population[bestSecondParentIndex].tour);
-			Mutate(population[worstParentIndex].tour);
-			TwoOpt(population[worstParentIndex].tour);
-			CalculateFitness(worstParentIndex);
-
-			if (population[worstParentIndex].fitness > bestFitness) {
-				bestFitness = population[worstParentIndex].fitness;
-				bestPath = population[worstParentIndex].path;
-				bestChromosome = population[worstParentIndex].tour;
-			}
-
-			if (population[worstParentIndex].fitness > population[bestTour].fitness) {
-				bestTour = worstParentIndex;
-			}
-
-			population[worstSecondParentIndex].tour = Crossover(population[bestSecondParentIndex].tour, population[bestParentIndex].tour);
-			Mutate(population[worstSecondParentIndex].tour);
-			TwoOpt(population[worstSecondParentIndex].tour);
-			CalculateFitness(worstSecondParentIndex);
-
-			if (population[worstSecondParentIndex].fitness > bestFitness) {
-				bestFitness = population[worstSecondParentIndex].fitness;
-				bestPath = population[worstSecondParentIndex].path;
-				bestChromosome = population[worstSecondParentIndex].tour;
-			}
-
-			if (population[worstSecondParentIndex].fitness > population[bestTour].fitness) {
-				bestTour = worstSecondParentIndex;
-			}
-		}
-	}
-
-	TwoOpt(population[bestTour].tour);
-
-	if (population[bestTour].fitness > bestFitness) {
-		bestFitness = population[bestTour].fitness;
-		bestPath = population[bestTour].path;
-		bestChromosome = population[bestTour].tour;
-	}
-}
-
-bool ParallelGeneticAlgorithm::CompareFitness(Chromosome& a, Chromosome& b) {
-	return a.fitness > b.fitness;
-}
-
 void ParallelGeneticAlgorithm::TwoOpt(std::vector<int>& chromosome) {
 	for (int n = 0; n < twoOptIterations; ++n) {
 		float minchange = 0;
@@ -285,10 +264,6 @@ void ParallelGeneticAlgorithm::TwoOpt(std::vector<int>& chromosome) {
 			break;
 		}
 	}
-}
-
-float ParallelGeneticAlgorithm::GetDistance(int a, int b) {
-	return cities[a][b];
 }
 
 void ParallelGeneticAlgorithm::Mutate(std::vector<int>& chromosome) {
@@ -368,44 +343,9 @@ int ParallelGeneticAlgorithm::FindCityIndex(std::vector<int>& chromosome, int ci
 	return -1;
 }
 
-float ParallelGeneticAlgorithm::Run(int numberOfIterations) {
-	std::vector<float> bestPaths(numberOfIterations, -1);
-	int cutoff = 500;
-
-	for (int i = 0; i < numberOfIterations; ++i) {
-		PrintBestChromosome();
-		MakeNextGeneration();
-		bestPaths[i] = bestPath;
-
-		if (i >= cutoff && abs(bestPaths[i] - bestPaths[i - cutoff]) >= 1)
-			break;
-	}
-
-	return bestPath;
-}
-
-float ParallelGeneticAlgorithm::RunFixedTime(double seconds) {
-	time_t start, end;
-	double elapsed;
-	start = time(NULL);
-	bool run = true;
-
-	while (run) {
-		end = time(NULL);
-		elapsed = difftime(end, start);
-		if (elapsed >= seconds) {
-			run = false;
-		}
-		else {
-			MakeNextGeneration();
-		}
-	}
-	return bestPath;
-}
-
 void ParallelGeneticAlgorithm::PrintChromosome(std::vector<int>& chromosome) {
 	for (int j = 0; j < chromosome.size(); ++j) {
-		std::cout << chromosome[j] + 1 << ", ";
+		std::cout << chromosome[j] + 1 << " ";
 	}
 	std::cout << chromosome[0] + 1 << "\n";
 }
@@ -424,4 +364,23 @@ void ParallelGeneticAlgorithm::PrintPopulation() {
 		PrintChromosome(population[i].tour);
 		std::cout << "\n";
 	}
+}
+
+bool ParallelGeneticAlgorithm::IsPathValid(std::vector<int>& path) {
+	std::vector<int> visitedCities(path.size(), 0);
+	for (int j = 0; j < path.size(); j++) {
+		visitedCities[path[j]]++;
+	}
+
+	bool valid = true;
+	for (int j = 0; j < path.size(); j++) {
+		if (visitedCities[j] != 1) {
+			std::cout << "Invalid city!\n";
+			valid = false;
+			break;
+		}
+	}
+
+	if (!valid)
+		std::cout << "Invalid chromosome!\n";
 }

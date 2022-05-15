@@ -9,15 +9,9 @@
 #include <functional>
 #include <mutex>
 #include <thread>
+#include <omp.h>
 #include "Greedy.h"
-
-struct Chromosome {
-	std::vector<int> tour;
-	float fitness;
-	float path;
-
-	Chromosome(int capacity) : tour(capacity) {}
-};
+#include "Chromosome.h"
 
 class ParallelGeneticAlgorithm {
 public:
@@ -33,7 +27,6 @@ public:
 	void InitializePopulation();
 	void PrintPopulation();
 	float Run(int numberOfIterations);
-	float RunFixedTime(double seconds);
 	static bool CompareFitness(Chromosome& a, Chromosome& b);
 	std::vector<int> GetBestChromosome();
 
@@ -59,8 +52,8 @@ private:
 	int FindNearestNeighbour(int city, std::vector<bool>& visitedCities);
 	void Mutate(std::vector<int>& chromosome);
 	void TwoOpt(std::vector<int>& chromosome);
-	void MakeNextGeneration();
 	float GetDistance(int a, int b);
 	void PrintBestChromosome();
 	void PrintChromosome(std::vector<int>& chromosome);
+	bool IsPathValid(std::vector<int>& chromosome);
 };

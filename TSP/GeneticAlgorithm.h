@@ -10,14 +10,7 @@
 #include <mutex>
 #include <thread>
 #include "Greedy.h"
-
-struct Chromosome {
-	std::vector<int> tour;
-	float fitness;
-	float path;
-
-	Chromosome(int capacity) : tour(capacity) {}
-};
+#include "Chromosome.h"
 
 class GeneticAlgorithm {
 public:
@@ -32,7 +25,7 @@ public:
 	int** SetCitiesMatrix(int** matrix);
 	void InitializePopulation();
 	void PrintPopulation();
-	float Run(int numberOfIterations);
+	void Run(int numberOfIterations);
 	float RunFixedTime(double seconds);
 	static bool CompareFitness(Chromosome& a, Chromosome& b);
 	std::vector<int> GetBestChromosome();

@@ -4,6 +4,7 @@
 #include "InstanceGenerator.h"
 #include "GeneticAlgorithm.h"
 #include "Greedy.h"
+#include "ParallelGeneticAlgorithm.h"
 
 class Manager {
 public:
@@ -18,5 +19,4 @@ private:
 	void DeleteMatrix(float** matrix, int size);
 	std::vector<std::string> Split(std::string word, char mark);
 	void SavePointsToFile(std::string filePath, std::vector<int> chromosome, std::vector<Point> points);
-	void Valid(int size, std::vector<int> path);
 };

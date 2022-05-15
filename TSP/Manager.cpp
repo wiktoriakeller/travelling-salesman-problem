@@ -3,27 +3,17 @@
 
 void Manager::TSPSolver() {
 	int size;
-	std::vector<Point> points = LoadPointsFromFile("Instances\\berlin52.txt");
+	std::vector<Point> points = LoadPointsFromFile("Instances\\krod100.txt");
 	float** matrix = PointsToMatrix(points, size);
 	//float greedy = TSPGreedy::FindShortestPath(0, matrix, size);
-	GeneticAlgorithm genetic(10000, size, 4, 10, 89, 13, matrix);
-	genetic.Run(1500);
+	//GeneticAlgorithm genetic(10000, size, 4, 10, 89, 13, matrix);
+	//genetic.Run(1500);
 	//std::vector<int> path = genetic.GetBestChromosome();
 	//Valid(size, path);
 	//DeleteMatrix(matrix, size);
-}
 
-void Manager::Valid(int size, std::vector<int> path) {
-	std::vector<bool> visitedCities(size, false);
-	for (int j = 0; j < path.size(); j++) {
-		visitedCities[path[j]] = true;
-	}
-
-	for (int j = 0; j < size; j++) {
-		if (!visitedCities[j]) {
-			std::cout << "No city: " << j + 1 << "\n";
-		}
-	}
+	ParallelGeneticAlgorithm parallel(1000, size, 4, 20, 89, 13, matrix);
+	parallel.Run(1500);
 }
 
 float** Manager::PointsToMatrix(std::vector<Point>& points, int& size) {
@@ -143,6 +133,7 @@ void Manager::SavePointsToFile(std::string filePath, std::vector<int> chromosome
 	pointsFile.close();
 }
 
+/*
 void Manager::RunTests() {
 	std::vector<std::string> files = { "30.txt", "60.txt", "90.txt", "120.txt", "150.txt",
 		"180.txt", "210.txt", "240.txt", "270.txt", "300.txt",
@@ -158,7 +149,7 @@ void Manager::RunTests() {
 		float** matrix = PointsToMatrix(points, size);
 		start = clock();
 		GeneticAlgorithm genetic(10000, size, 4, 10, 89, 13, matrix);
-		float score = genetic.Run(1500);
+		genetic.Run(1500);
 		stop = clock();
 		double elapsed = ((double)(stop - start)) / CLOCKS_PER_SEC;
 		result << "Score " << score << " " << "Time " << elapsed << "\n";
@@ -166,6 +157,7 @@ void Manager::RunTests() {
 		std::cout << "Score " << score << " " << "Time " << elapsed << "\n";
 	}
 }
+*/
 
 void Manager::TestParameters() {
 	int startPopulation = 10000;

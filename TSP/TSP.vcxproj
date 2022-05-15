@@ -152,6 +152,7 @@
     <ClCompile Include="Point.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Chromosome.h" />
     <ClInclude Include="GeneticAlgorithm.h" />
     <ClInclude Include="Greedy.h" />
     <ClInclude Include="InstanceGenerator.h" />
