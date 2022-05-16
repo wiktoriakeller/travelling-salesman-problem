@@ -3,7 +3,7 @@
 
 void Manager::TSPSolver() {
 	int size;
-	std::vector<Point> points = LoadPointsFromFile("Instances\\krod100.txt");
+	std::vector<Point> points = LoadPointsFromFile("Instances\\210.txt");
 	float** matrix = PointsToMatrix(points, size);
 	GeneticAlgorithm genetic(10000, size, 4, 10, 89, 13, matrix);
 	genetic.Run(1500);
@@ -15,9 +15,9 @@ void Manager::ParallelTSPSolver() {
 	//omp_set_num_threads(8);
 
 	int size;
-	std::vector<Point> points = LoadPointsFromFile("Instances\\krod100.txt");
+	std::vector<Point> points = LoadPointsFromFile("Instances\\210.txt");
 	float** matrix = PointsToMatrix(points, size);
-	ParallelGeneticAlgorithm parallel(1000, size, 4, 25, 89, 13, matrix);
+	ParallelGeneticAlgorithm parallel(1000, size, 4, 18, 89, 13, matrix);
 	parallel.Run(1500);
 	DeleteMatrix(matrix, size);
 }

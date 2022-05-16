@@ -1,8 +1,9 @@
+from cmath import sqrt
 import matplotlib.pyplot as plt
 import os
 
 cityMap = {}
-cities = "kroD100.txt"
+cities = "210.txt"
 dir = os.path.dirname(os.path.abspath(__file__))
 
 with open(dir + "\\" + cities, "r") as file:
@@ -17,22 +18,27 @@ x = []
 y = []
 n = []
 
-results = "ll.txt"
+results = "obrazek-para.txt"
+path = 0
 with open(dir + "\\" + results, "r") as file:
     for block in file:
-        print(block)
         numbers = block.split(" ")
         numbers = [x for x in numbers if x != '']
 
         for num in numbers:
             num = int(num)
             posx, posy = cityMap[num]
+            if len(x) > 0 and len(y) > 0:
+                path += sqrt(pow(posx - x[-1], 2) + pow(posy - y[-1], 2))
+
             x.append(posx)
             y.append(posy)
             n.append(num + 1)
 
 x.append(x[0])
 y.append(y[0])
+path += sqrt(pow(x[0] - x[-1], 2) + pow(y[0] - y[-1], 2))
+print(path)
 
 plt.figure(figsize=(10, 8))
 plt.xlabel('x')

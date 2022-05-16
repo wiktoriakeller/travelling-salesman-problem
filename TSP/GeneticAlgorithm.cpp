@@ -227,13 +227,15 @@ void GeneticAlgorithm::MakeNextGeneration() {
 		bestTour = 0;
 
 		for (int i = 0; i < numberOfParentPairs * 2; i += 2) {
-
 			bestParentIndex = i;
 			bestSecondParentIndex = i + 1;
 			worstParentIndex = populationSize - i - 1;
 			worstSecondParentIndex = populationSize - i - 2;
 
-			population[worstParentIndex].tour = Crossover(population[bestParentIndex].tour, population[bestSecondParentIndex].tour);
+			population[worstParentIndex].tour = Crossover(
+				population[bestParentIndex].tour, 
+				population[bestSecondParentIndex].tour);
+
 			Mutate(population[worstParentIndex].tour);
 			TwoOpt(population[worstParentIndex].tour);
 			CalculateFitness(worstParentIndex);
@@ -248,7 +250,10 @@ void GeneticAlgorithm::MakeNextGeneration() {
 				bestTour = worstParentIndex;
 			}
 
-			population[worstSecondParentIndex].tour = Crossover(population[bestSecondParentIndex].tour, population[bestParentIndex].tour);
+			population[worstSecondParentIndex].tour = Crossover(
+				population[bestSecondParentIndex].tour, 
+				population[bestParentIndex].tour);
+
 			Mutate(population[worstSecondParentIndex].tour);
 			TwoOpt(population[worstSecondParentIndex].tour);
 			CalculateFitness(worstSecondParentIndex);
@@ -259,7 +264,8 @@ void GeneticAlgorithm::MakeNextGeneration() {
 				bestChromosome = population[worstSecondParentIndex].tour;
 			}
 
-			if (population[worstSecondParentIndex].fitness > population[bestTour].fitness) {
+			if (population[worstSecondParentIndex].fitness > 
+				population[bestTour].fitness) {
 				bestTour = worstSecondParentIndex;
 			}
 		}
@@ -426,7 +432,7 @@ float GeneticAlgorithm::RunFixedTime(double seconds) {
 
 void GeneticAlgorithm::PrintChromosome(std::vector<int>& chromosome) {
 	for (int j = 0; j < chromosome.size(); ++j) {
-		std::cout << chromosome[j] + 1 << ", ";
+		std::cout << chromosome[j] + 1 << " ";
 	}
 	std::cout << chromosome[0] + 1 << "\n";
 }

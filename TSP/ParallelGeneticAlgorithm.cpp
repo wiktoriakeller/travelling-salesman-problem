@@ -51,7 +51,7 @@ float ParallelGeneticAlgorithm::GetDistance(int a, int b) {
 }
 
 void ParallelGeneticAlgorithm::Run(int numberOfIterations, float bestFound) {
-	omp_set_nested(1);
+	//omp_set_nested(1);
 	omp_set_num_threads(8);
 
 	for (int i = 0; i < numberOfIterations; ++i) {
@@ -75,7 +75,10 @@ void ParallelGeneticAlgorithm::Run(int numberOfIterations, float bestFound) {
 				worstParentIndex = populationSize - j - 1;
 				worstSecondParentIndex = populationSize - j - 2;
 
-				population[worstParentIndex].tour = Crossover(population[bestParentIndex].tour, population[bestSecondParentIndex].tour);
+				population[worstParentIndex].tour = 
+					Crossover(population[bestParentIndex].tour, 
+						population[bestSecondParentIndex].tour);
+
 				Mutate(population[worstParentIndex].tour);
 				TwoOpt(population[worstParentIndex].tour);
 				
@@ -88,6 +91,7 @@ void ParallelGeneticAlgorithm::Run(int numberOfIterations, float bestFound) {
 					for (int g = 0; g < numberOfCities - 1; g++) {
 						localPath += cities[(population[chrom1].tour)[g]][(population[chrom1].tour)[g + 1]];
 					}
+					localPath += cities[(population[chrom1].tour)[numberOfCities - 1]][(population[chrom1].tour)[0]];
 
 					#pragma omp atomic
 					path1 += localPath;
@@ -96,7 +100,10 @@ void ParallelGeneticAlgorithm::Run(int numberOfIterations, float bestFound) {
 				population[chrom1].path = path1;
 				population[chrom1].fitness = 1 / path1;
 
-				population[worstSecondParentIndex].tour = Crossover(population[bestSecondParentIndex].tour, population[bestParentIndex].tour);
+				population[worstSecondParentIndex].tour = 
+					Crossover(population[bestSecondParentIndex].tour, 
+						population[bestParentIndex].tour);
+
 				Mutate(population[worstSecondParentIndex].tour);
 				TwoOpt(population[worstSecondParentIndex].tour);
 				
@@ -109,6 +116,7 @@ void ParallelGeneticAlgorithm::Run(int numberOfIterations, float bestFound) {
 					for (int g = 0; g < numberOfCities - 1; g++) {
 						localPath += cities[(population[chrom2].tour)[g]][(population[chrom2].tour)[g + 1]];
 					}
+					localPath += cities[(population[chrom2].tour)[numberOfCities - 1]][(population[chrom2].tour)[0]];
 
 					#pragma omp atomic
 					path2 += localPath;
