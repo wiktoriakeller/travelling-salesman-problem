@@ -57,7 +57,6 @@ float ParallelGeneticAlgorithm::GetDistance(int a, int b) {
 float ParallelGeneticAlgorithm::Run(int numberOfIterations) {
 	for (int i = 0; i < numberOfIterations; ++i) {
 		int bestTour = 0;
-		std::vector<int> mutatedChromosomes(numberOfParentPairs * 2, -1);
 		std::sort(population.begin(), population.end(), CompareFitness);
 
 		#pragma omp parallel 
@@ -66,6 +65,9 @@ float ParallelGeneticAlgorithm::Run(int numberOfIterations) {
 			int bestSecondParentIndex;
 			int worstParentIndex;
 			int worstSecondParentIndex;
+
+			float localBestFitness = bestFitness;
+			int localBestTour = -1;
 
 			#pragma omp for
 			for (int j = 0; j < numberOfParentPairs * 2; j += 2) {
@@ -116,19 +118,24 @@ float ParallelGeneticAlgorithm::Run(int numberOfIterations) {
 				population[chrom2].path = path2;
 				population[chrom2].fitness = 1 / path2;
 
-				mutatedChromosomes[j] = worstParentIndex;
-				mutatedChromosomes[j + 1] = worstSecondParentIndex;
+				if (population[worstParentIndex].fitness > localBestFitness) {
+					localBestTour = worstParentIndex;
+					localBestFitness = population[worstParentIndex].fitness;
+				}
+
+				if (population[worstSecondParentIndex].fitness > localBestFitness) {
+					localBestTour = worstSecondParentIndex;
+					localBestFitness = population[worstSecondParentIndex].fitness;
+				}
 			}
 
-			#pragma omp single
+			#pragma omp critical
 			{
-				for (int j = 0; j < mutatedChromosomes.size(); ++j) {
-					if (population[j].fitness > bestFitness) {
-						bestFitness = population[j].fitness;
-						bestPath = population[j].path;
-						bestChromosome = population[j].tour;
-						bestTour = j;
-					}
+				if (localBestTour != -1 && population[localBestTour].fitness > bestFitness) {
+					bestFitness = population[localBestTour].fitness;
+					bestPath = population[localBestTour].path;
+					bestChromosome = population[localBestTour].tour;
+					bestTour = localBestTour;
 				}
 			}
 		}
