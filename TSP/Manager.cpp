@@ -5,15 +5,21 @@ void Manager::TSPSolver() {
 	int size;
 	std::vector<Point> points = LoadPointsFromFile("Instances\\krod100.txt");
 	float** matrix = PointsToMatrix(points, size);
-	//float greedy = TSPGreedy::FindShortestPath(0, matrix, size);
-	//GeneticAlgorithm genetic(10000, size, 4, 10, 89, 13, matrix);
-	//genetic.Run(1500);
-	//std::vector<int> path = genetic.GetBestChromosome();
-	//Valid(size, path);
-	//DeleteMatrix(matrix, size);
+	GeneticAlgorithm genetic(10000, size, 4, 10, 89, 13, matrix);
+	genetic.Run(1500);
+	DeleteMatrix(matrix, size);
+}
 
+void Manager::ParallelTSPSolver() {
+	omp_set_nested(1);
+	omp_set_num_threads(8);
+
+	int size;
+	std::vector<Point> points = LoadPointsFromFile("Instances\\krod100.txt");
+	float** matrix = PointsToMatrix(points, size);
 	ParallelGeneticAlgorithm parallel(1000, size, 4, 20, 89, 13, matrix);
 	parallel.Run(1500);
+	DeleteMatrix(matrix, size);
 }
 
 float** Manager::PointsToMatrix(std::vector<Point>& points, int& size) {

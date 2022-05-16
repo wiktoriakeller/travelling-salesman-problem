@@ -55,9 +55,6 @@ float ParallelGeneticAlgorithm::GetDistance(int a, int b) {
 }
 
 float ParallelGeneticAlgorithm::Run(int numberOfIterations) {
-	omp_set_nested(1);
-	omp_set_num_threads(8);
-
 	for (int i = 0; i < numberOfIterations; ++i) {
 		int bestTour = 0;
 		std::vector<int> mutatedChromosomes(numberOfParentPairs * 2, -1);
@@ -160,46 +157,48 @@ void ParallelGeneticAlgorithm::ClearPopulation() {
 }
 
 void ParallelGeneticAlgorithm::InitializePopulation() {
-	int startCity;
-	int nextCity;
-	std::vector<bool> visitedCities(numberOfCities, false);
+	#pragma omp parallel
+	{
+		int startCity;
+		int nextCity;
+		#pragma omp for
+		for (int i = 0; i < populationSize; ++i) {
+			std::vector<bool> visitedCities(numberOfCities, false);
+			startCity = rand() % numberOfCities;
+			nextCity = startCity;
+			visitedCities[startCity] = true;
 
-	for(int i = 0; i < populationSize; ++i) {
-		startCity = rand() % numberOfCities;
-		nextCity = startCity;
-		visitedCities[startCity] = true;
-
-		for (int j = 0; j < numberOfCities - 1; ++j) {
-			population[i].tour[j] = nextCity;
-			if ((rand() % 100) < chanceToUseCloseCity) {
-				nextCity = FindNearestNeighbour(population[i].tour[j], visitedCities);
-			}
-			else {
-				std::vector<int> onlyUnvisitedCities;
-				onlyUnvisitedCities.reserve(numberOfCities);
-				for (int g = 0; g < visitedCities.size(); ++g) {
-					if (!visitedCities[g]) {
-						onlyUnvisitedCities.emplace_back(g);
-					}
+			for (int j = 0; j < numberOfCities - 1; ++j) {
+				population[i].tour[j] = nextCity;
+				if ((rand() % 100) < chanceToUseCloseCity) {
+					nextCity = FindNearestNeighbour(population[i].tour[j], visitedCities);
 				}
+				else {
+					std::vector<int> onlyUnvisitedCities;
+					onlyUnvisitedCities.reserve(numberOfCities);
+					for (int g = 0; g < visitedCities.size(); ++g) {
+						if (!visitedCities[g]) {
+							onlyUnvisitedCities.emplace_back(g);
+						}
+					}
 
-				int randomCity = rand() % onlyUnvisitedCities.size();
-				nextCity = onlyUnvisitedCities[randomCity];
-				visitedCities[nextCity] = true;
+					int randomCity = rand() % onlyUnvisitedCities.size();
+					nextCity = onlyUnvisitedCities[randomCity];
+					visitedCities[nextCity] = true;
+				}
 			}
-		}
 
-		population[i].tour[numberOfCities - 1] = nextCity;
-		CalculateFitness(i);
+			population[i].tour[numberOfCities - 1] = nextCity;
+			CalculateFitness(i);
 
-		if (population[i].fitness > bestFitness) {
-			bestFitness = population[i].fitness;
-			bestPath = population[i].path;
-			bestChromosome = population[i].tour;
-		}
-
-		for (int j = 0; j < visitedCities.size(); ++j) {
-			visitedCities[j] = false;
+			#pragma omp critical 
+			{
+				if (population[i].fitness > bestFitness) {
+					bestFitness = population[i].fitness;
+					bestPath = population[i].path;
+					bestChromosome = population[i].tour;
+				}
+			}
 		}
 	}
 }

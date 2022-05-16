@@ -9,6 +9,7 @@
 class Manager {
 public:
 	void TSPSolver();
+	void ParallelTSPSolver();
 	void TestParameters();
 	void RunTests();
 

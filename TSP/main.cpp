@@ -2,8 +2,7 @@
 
 int main() {
 	Manager manager;
-	//manager.TSPSolver();
-	manager.TSPSolver();
+	manager.ParallelTSPSolver();
 
 	return 0;
 }
