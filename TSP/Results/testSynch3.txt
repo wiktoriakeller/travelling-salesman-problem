@@ -1,0 +1,24 @@
+berlin52.txt
+Best path Best Fitness Time 
+7544.37 0.000132549 0.65
+cities20.txt
+Best path Best Fitness Time 
+565.973 0.00176687 0.231
+cities40.txt
+Best path Best Fitness Time 
+4174.96 0.000239523 0.432
+kroA200.txt
+Best path Best Fitness Time 
+29547 3.38444e-05 5.437
+kroB150.txt
+Best path Best Fitness Time 
+26127.4 3.82741e-05 2.304
+kroD100.txt
+Best path Best Fitness Time 
+21384.5 4.67628e-05 1.083
+tsp250.txt
+Best path Best Fitness Time 
+12547.4 7.96975e-05 9.201
+tsp500.txt
+Best path Best Fitness Time 
+84547 1.18277e-05 152.943

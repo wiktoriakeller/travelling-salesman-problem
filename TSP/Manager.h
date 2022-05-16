@@ -12,6 +12,7 @@ public:
 	void ParallelTSPSolver();
 	void TestParameters();
 	void RunTests();
+	void RunTestsParallel();
 
 private:
 	float** PointsToMatrix(std::vector<Point>& points, int& size);

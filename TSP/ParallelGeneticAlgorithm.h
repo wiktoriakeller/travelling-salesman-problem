@@ -15,6 +15,10 @@
 
 class ParallelGeneticAlgorithm {
 public:
+	float bestFitness;
+	float bestPath;
+	std::vector<int> bestChromosome;
+
 	ParallelGeneticAlgorithm(int populationSize, int numberOfCities, float mutationRate, int numberOfParentPairs,
 		int chanceToUseCloseCity, int twoOptIterations, float** cities);
 	void SetPopulationSize(int newSize);
@@ -26,9 +30,8 @@ public:
 	int** SetCitiesMatrix(int** matrix);
 	void InitializePopulation();
 	void PrintPopulation();
-	float Run(int numberOfIterations);
+	void Run(int numberOfIterations, float bestFound = -1.0f);
 	static bool CompareFitness(Chromosome& a, Chromosome& b);
-	std::vector<int> GetBestChromosome();
 
 private:
 	int numberOfParentPairs;
@@ -38,11 +41,8 @@ private:
 	int chanceToUseCloseCity;
 	int twoOptIterations;
 	float** cities;
-	float bestFitness;
-	float bestPath;
 	float bestWrittenFitness;
 	std::vector<Chromosome> population;
-	std::vector<int> bestChromosome;
 
 	void ClearPopulation();
 	void CalculateFitness(int index);

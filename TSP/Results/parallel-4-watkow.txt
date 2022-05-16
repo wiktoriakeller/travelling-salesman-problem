@@ -1,0 +1,42 @@
+30.txt
+Best path Best Fitness Time 
+3726.69 0.000268335 0.055
+60.txt
+Best path Best Fitness Time 
+5410.8 0.000184816 0.083
+90.txt
+Best path Best Fitness Time 
+7094.95 0.000140945 0.106
+120.txt
+Best path Best Fitness Time 
+8065.94 0.000123978 0.305
+150.txt
+Best path Best Fitness Time 
+9111.83 0.000109747 0.568
+180.txt
+Best path Best Fitness Time 
+10002.1 9.99795e-05 0.748
+210.txt
+Best path Best Fitness Time 
+11462.5 8.72414e-05 0.318
+240.txt
+Best path Best Fitness Time 
+11519.5 8.68093e-05 1.215
+270.txt
+Best path Best Fitness Time 
+12253.5 8.16093e-05 4.044
+300.txt
+Best path Best Fitness Time 
+13199.5 7.57602e-05 2.796
+330.txt
+Best path Best Fitness Time 
+13563.4 7.37278e-05 12.893
+360.txt
+Best path Best Fitness Time 
+14245.9 7.01957e-05 10.233
+390.txt
+Best path Best Fitness Time 
+14721 6.79302e-05 9.893
+420.txt
+Best path Best Fitness Time 
+15281.8 6.54373e-05 10.603

@@ -2,7 +2,7 @@
 
 int main() {
 	Manager manager;
-	manager.ParallelTSPSolver();
+	manager.RunTestsParallel();
 
 	return 0;
 }

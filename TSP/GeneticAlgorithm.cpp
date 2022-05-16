@@ -46,10 +46,6 @@ int** GeneticAlgorithm::SetCitiesMatrix(int** matrix) {
 	return matrix;
 }
 
-std::vector<int> GeneticAlgorithm::GetBestChromosome() {
-	return bestChromosome;
-}
-
 void GeneticAlgorithm::ClearPopulation() {
 	if (!population.empty()) {
 		bestChromosome.clear();
@@ -393,6 +389,19 @@ void GeneticAlgorithm::Run(int numberOfIterations) {
 	for (int i = 0; i < numberOfIterations; ++i) {
 		PrintBestChromosome();
 		MakeNextGeneration();
+	}
+}
+
+void GeneticAlgorithm::RunTest(int numberOfIterations) {
+	std::vector<float> allBestPaths(numberOfIterations, -1);
+	int cutoff = 150;
+
+	for (int i = 0; i < numberOfIterations; ++i) {
+		MakeNextGeneration();
+		allBestPaths[i] = bestPath;
+
+		if (i >= cutoff && abs(allBestPaths[i - cutoff] - bestPath) <= 60)
+			break;
 	}
 }
 

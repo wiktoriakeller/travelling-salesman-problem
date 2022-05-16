@@ -11,13 +11,13 @@ void Manager::TSPSolver() {
 }
 
 void Manager::ParallelTSPSolver() {
-	omp_set_nested(1);
-	omp_set_num_threads(8);
+	//omp_set_nested(1);
+	//omp_set_num_threads(8);
 
 	int size;
 	std::vector<Point> points = LoadPointsFromFile("Instances\\krod100.txt");
 	float** matrix = PointsToMatrix(points, size);
-	ParallelGeneticAlgorithm parallel(1000, size, 4, 20, 89, 13, matrix);
+	ParallelGeneticAlgorithm parallel(1000, size, 4, 25, 89, 13, matrix);
 	parallel.Run(1500);
 	DeleteMatrix(matrix, size);
 }
@@ -139,31 +139,75 @@ void Manager::SavePointsToFile(std::string filePath, std::vector<int> chromosome
 	pointsFile.close();
 }
 
-/*
-void Manager::RunTests() {
+void Manager::RunTestsParallel() {
 	std::vector<std::string> files = { "30.txt", "60.txt", "90.txt", "120.txt", "150.txt",
 		"180.txt", "210.txt", "240.txt", "270.txt", "300.txt",
-		"330.txt", "360.txt", "390.txt", "420.txt", "450.txt" };
-	std::string path = "Test\\";
+		"330.txt", "360.txt", "390.txt", "420.txt", "450.txt", "berlin52.txt", "kroD100.txt", "kroB150.txt" };
+
+	std::vector<float> bestFound = {
+		4188.85, 5756.4, 7191.84, 8067.61, 9168.92, 10012.1, 11853.9, 11532.7, 12276.4, 13201.4, 13571.7, 14268, 14728.2, 15310.8, 15751,
+		7544.37, 21399.8, 26127.4
+	};
+
+	std::string path = "Instances\\";
 	clock_t start, stop;
-	std::ofstream result("Results\\sequence1.txt");
+	std::ofstream result("Results\\parallel-8-watkow.txt");
 
 	for (int i = 0; i < files.size(); i++) {
-		result << files[i] << "\n";
 		int size;
 		std::vector<Point> points = LoadPointsFromFile(path + files[i]);
 		float** matrix = PointsToMatrix(points, size);
+
 		start = clock();
-		GeneticAlgorithm genetic(10000, size, 4, 10, 89, 13, matrix);
-		genetic.Run(1500);
+		ParallelGeneticAlgorithm genetic(10000, size, 4, 20, 89, 13, matrix);
+		genetic.Run(1500, bestFound[i]);
 		stop = clock();
 		double elapsed = ((double)(stop - start)) / CLOCKS_PER_SEC;
-		result << "Score " << score << " " << "Time " << elapsed << "\n";
-		std::cout << "File: " << files[i] << "\n";
-		std::cout << "Score " << score << " " << "Time " << elapsed << "\n";
+
+		result << files[i] << "\n";
+		result << "Best path " << "Best Fitness " << "Time " << "\n";
+		result << genetic.bestPath << " " << genetic.bestFitness << " " << elapsed << "\n";
+
+		std::cout << files[i] << "\n";
+		std::cout << "Best path " << "Best Fitness " << "Time " << "\n";
+		std::cout << genetic.bestPath << " " << genetic.bestFitness << " " << elapsed << "\n";
+		DeleteMatrix(matrix, size);
 	}
 }
-*/
+
+void Manager::RunTests() {
+	//std::vector<std::string> files = { "30.txt", "60.txt", "90.txt", "120.txt", "150.txt",
+	//	"180.txt", "210.txt", "240.txt", "270.txt", "300.txt",
+	//	"330.txt", "360.txt", "390.txt", "420.txt", "450.txt" };
+
+	std::vector<std::string> files = { "berlin52.txt", "cities20.txt", 
+	"cities40.txt", "kroA200.txt", "kroB150.txt", "kroD100.txt", "tsp250.txt",
+		"tsp500.txt", "tsp1000.txt", "pr299.txt"};
+
+	std::string path = "Instances\\";
+	clock_t start, stop;
+	std::ofstream result("Results\\testSynch4.txt");
+
+	for (int i = 0; i < files.size(); i++) {
+		int size;
+		std::vector<Point> points = LoadPointsFromFile(path + files[i]);
+		float** matrix = PointsToMatrix(points, size);
+		
+		start = clock();
+		GeneticAlgorithm genetic(10000, size, 4, 10, 89, 13, matrix);
+		genetic.RunTest(1500);
+		stop = clock();
+		double elapsed = ((double)(stop - start)) / CLOCKS_PER_SEC;
+		
+		result << files[i] << "\n";
+		result << "Best path " << "Best Fitness " << "Time " << "\n";
+		result << genetic.bestPath << " " << genetic.bestFitness << " " << elapsed << "\n";
+		
+		std::cout << files[i] << "\n";
+		std::cout << "Best path " << "Best Fitness " << "Time " << "\n";
+		std::cout << genetic.bestPath << " " << genetic.bestFitness << " " << elapsed << "\n";
+	}
+}
 
 void Manager::TestParameters() {
 	int startPopulation = 10000;

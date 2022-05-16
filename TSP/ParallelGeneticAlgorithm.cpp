@@ -46,15 +46,14 @@ int** ParallelGeneticAlgorithm::SetCitiesMatrix(int** matrix) {
 	return matrix;
 }
 
-std::vector<int> ParallelGeneticAlgorithm::GetBestChromosome() {
-	return bestChromosome;
-}
-
 float ParallelGeneticAlgorithm::GetDistance(int a, int b) {
 	return cities[a][b];
 }
 
-float ParallelGeneticAlgorithm::Run(int numberOfIterations) {
+void ParallelGeneticAlgorithm::Run(int numberOfIterations, float bestFound) {
+	omp_set_nested(1);
+	omp_set_num_threads(8);
+
 	for (int i = 0; i < numberOfIterations; ++i) {
 		int bestTour = 0;
 		std::sort(population.begin(), population.end(), CompareFitness);
@@ -147,10 +146,11 @@ float ParallelGeneticAlgorithm::Run(int numberOfIterations) {
 			bestChromosome = population[bestTour].tour;
 		}
 
-		PrintBestChromosome();
-	}
+		if (bestFound != -1.0f && bestFound >= bestPath)
+			break;
 
-	return bestPath;
+		//PrintBestChromosome();
+	}
 }
 
 void ParallelGeneticAlgorithm::ClearPopulation() {
@@ -389,4 +389,6 @@ bool ParallelGeneticAlgorithm::IsPathValid(std::vector<int>& path) {
 
 	if (!valid)
 		std::cout << "Invalid chromosome!\n";
+
+	return valid;
 }
